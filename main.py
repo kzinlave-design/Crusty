@@ -1,4 +1,6 @@
 # main.py — Crusty Search (monolith, fixed + free-hosting optimized)
+import threading
+from flask import Flask
 import asyncio, aiosqlite, random, re, os, sys, logging, json, hashlib, signal, time
 import aiohttp
 import ssl as _ssl
@@ -116,8 +118,20 @@ logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-_MAIN_LOCK_HANDLE = None
+# ==== Render.com health-check ====
+from flask import Flask  # добавьте в импорты сверху, а не здесь
 
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def health_check():
+    return "Bot is running", 200
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+
+_MAIN_LOCK_HANDLE = None
 
 def acquire_single_instance_lock():
     global _MAIN_LOCK_HANDLE
@@ -3204,6 +3218,11 @@ if __name__ == "__main__":
     if not acquire_single_instance_lock():
         logger.error("❌ Другой экземпляр бота уже запущен!")
         sys.exit(1)
+
+    # Flask в фоне — чтобы Render видел открытый порт
+    threading.Thread(target=run_flask, daemon=True).start()
+    logger.info("✅ Flask health-check запущен в фоне.")
+
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
