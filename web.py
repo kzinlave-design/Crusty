@@ -5,10 +5,10 @@ print(f"=== PYTHON VERSION: {sys.version} ===")
 print(f"=== FILES IN ROOT: {os.listdir('.')} ===")
 
 try:
-    from aaa import web_app, main
-    print("=== SUCCESS: aaa.py imported! ===")
+    from main import web_app, main as bot_main  # Импортируем из main.py
+    print("=== SUCCESS: main.py imported! ===")
 except Exception as e:
-    print("=== ERROR IMPORTING AAA.PY ===")
+    print("=== ERROR IMPORTING main.py ===")
     import traceback
     traceback.print_exc()
     raise e
@@ -24,7 +24,8 @@ def _start_bot():
         return
     _bot_thread_started = True
     try:
-        asyncio.run(main())
+        # Запускаем корутину main из main.py
+        asyncio.run(bot_main())
     except Exception as e:
         print(f"Bot crashed: {e}")
 
